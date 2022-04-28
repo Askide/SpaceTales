@@ -56,18 +56,18 @@ struct FProjectileInfo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
 	UStaticMesh* BulletMesh = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
-	UParticleSystem* BulletFX = nullptr;
-	
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
-	// TSubclassOf<class ASTProjectileDefault> Projectile = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
 	float ProjectileDamage = 20.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
 	float ProjectileLifeTime = 20.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
 	float ProjectileInitSpeed = 2000.0f;
-	
+
+	// vfx trace on spawn
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileFX")
+	UParticleSystem* BulletFX = nullptr;
+	// sfx on hit
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileFX")
+	USoundBase* HitSound = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -86,7 +86,7 @@ struct FWeaponInfo : public FTableRowBase
 	bool bIsReloadable = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
 	float ReloadTime = 2.0f;
-
+	
 	// hit params on projectile spawn failed
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Trace")
 	float WeaponDamage = 20.0f;
@@ -106,8 +106,10 @@ struct FWeaponInfo : public FTableRowBase
 	USoundBase* SoundReloadWeapon = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadFX")
 	UAnimMontage* AnimWeaponReload = nullptr;
-	
+
 	// weapon projectile info
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
+	TSubclassOf<class ASTProjectile_Default> Projectile = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
 	FProjectileInfo ProjectileSetting;
 	

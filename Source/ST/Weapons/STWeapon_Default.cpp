@@ -6,6 +6,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Projectile/STProjectile_Default.h"
 #include "ST/CharacterComponents/InventoryComponent.h"
 
 // Sets default values
@@ -43,10 +44,7 @@ void ASTWeapon_Default::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (WeaponSetting.bIsReloadable)
-	{
-		FireTick(DeltaTime);	
-	}
+	FireTick(DeltaTime);	
 	ReloadTick(DeltaTime);
 	DispersionTick(DeltaTime);
 }
@@ -75,7 +73,10 @@ void ASTWeapon_Default::FireTick(float DeltaTime)
 		}
 		else
 		{
-			FireTimer -= DeltaTime;
+			if (WeaponSetting.bIsReloadable)
+			{
+				FireTimer -= DeltaTime;
+			}
 		}
 	}	
 }
@@ -87,10 +88,9 @@ bool ASTWeapon_Default::CheckWeaponCanFire() const
 
 void ASTWeapon_Default::Fire()
 {
-	
+	FireTimer = WeaponSetting.RateOfFire;
 	if (WeaponSetting.bIsReloadable)
 	{
-		FireTimer = WeaponSetting.RateOfFire;
 		CurrentRound = CurrentRound - 1;	
 	}
 	ChangeDispersionByShot();
@@ -101,57 +101,58 @@ void ASTWeapon_Default::Fire()
 	if (ShootLocation)
 	{
 		const FVector SpawnLocation = ShootLocation->GetComponentLocation();
+		FRotator SpawnRotation = ShootLocation->GetComponentRotation();
+		FProjectileInfo ProjectileInfo;
+		ProjectileInfo = GetProjectile();
 
 		const FVector EndLocation = GetFireEndLocation();
 		FVector Dir = EndLocation - SpawnLocation;
 		Dir.Normalize();
-
+		
+		FMatrix MyMatrix(Dir, FVector(0, 1, 0), FVector(0, 0, 1), FVector::ZeroVector);
+		SpawnRotation = MyMatrix.Rotator();
+		
 		OnFire.Broadcast();
-		
-		FHitResult HitResult;
-
-		const FVector TraceStartPoint = SpawnLocation;
-		const FVector TraceEndPoint = EndLocation;
-		
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartPoint, TraceEndPoint, ECC_WorldStatic))
+		if (WeaponSetting.Projectile)
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("TraceWork")));
-			DrawDebugLine(GetWorld(), ShootLocation->GetComponentLocation(), HitResult.Location, FColor::Yellow, false, 5.f, (uint8)'\000', 0.5f);
-			DrawDebugSphere(GetWorld(), HitResult.Location, 5.0f, 8, FColor::Green, false, 4.0f);
-			
-			if(HitResult.GetActor() && HitResult.PhysMaterial.IsValid())
+			//Projectile Init Ballistic Fire
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			SpawnParams.Owner = GetOwner();
+			SpawnParams.Instigator = GetInstigator();
+
+			ASTProjectile_Default* MyProjectile = Cast<ASTProjectile_Default>(GetWorld()->SpawnActor(WeaponSetting.Projectile, &SpawnLocation, &SpawnRotation, SpawnParams));
+			if (MyProjectile)
 			{
-				// EPhysicalSurface mySurfaceType = UGameplayStatics::GetSurfaceType(HitResult);
-				//
-				// if (WeaponSetting.ProjectileSetting.HitDecals.Contains(mySurfaceType))
-				// {
-				// 	UMaterialInterface* myMaterial = WeaponSetting.ProjectileSetting.HitDecals[mySurfaceType];
-				//
-				// 	if (myMaterial && HitResult.GetComponent())
-				// 	{
-				// 		UGameplayStatics::SpawnDecalAttached(myMaterial, FVector(20.0f), HitResult.GetComponent(), NAME_None, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation(), EAttachLocation::KeepWorldPosition, 10.0f);
-				// 	}
-				// }
-				// if (WeaponSetting.ProjectileSetting.HitFXs.Contains(mySurfaceType))
-				// {
-				// 	UParticleSystem* myParticle = WeaponSetting.ProjectileSetting.HitFXs[mySurfaceType];
-				// 	if (myParticle)
-				// 	{
-				// 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), myParticle, FTransform(HitResult.ImpactNormal.Rotation(), HitResult.ImpactPoint, FVector(1.0f)));
-				// 	}
-				// }
-				//
-				// if (WeaponSetting.ProjectileSetting.HitSound)
-				// {
-				// 	UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponSetting.ProjectileSetting.HitSound, HitResult.ImpactPoint);
-				// }
-				//
-				// UTypes::AddEffectBySurfaceType(HitResult.GetActor(), HitResult.BoneName, ProjectileInfo.SurfaceEffect, mySurfaceType);
-				
+				MyProjectile->ProjectileSetting = ProjectileInfo;
+				MyProjectile->InitProjectile(ProjectileInfo);
 			}
+		}
+		else
+		{
+			FHitResult HitResult;
+
+			const FVector TraceStartPoint = SpawnLocation;
+			const FVector TraceEndPoint = EndLocation;
+		
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartPoint, TraceEndPoint, ECC_WorldStatic))
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("TraceWork")));
+				DrawDebugLine(GetWorld(), ShootLocation->GetComponentLocation(), HitResult.Location, FColor::Yellow, false, 5.f, (uint8)'\000', 0.5f);
+				DrawDebugSphere(GetWorld(), HitResult.Location, 5.0f, 8, FColor::Green, false, 4.0f);
 			
-			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), WeaponSetting.ProjectileSetting.ProjectileDamage, HitResult.TraceStart, HitResult, GetInstigatorController(),this, NULL);
+				if(HitResult.GetActor() && HitResult.PhysMaterial.IsValid())
+				{
+					if (ProjectileInfo.HitSound)
+					{
+						UGameplayStatics::PlaySoundAtLocation(GetWorld(), ProjectileInfo.HitSound, HitResult.ImpactPoint);
+					}
+				}
 			
+				UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ProjectileInfo.ProjectileDamage, HitResult.TraceStart, HitResult, GetInstigatorController(),this, NULL);
+			
+			}
 		}
 	}
 
@@ -164,6 +165,11 @@ void ASTWeapon_Default::Fire()
 	}
 }
 
+FProjectileInfo ASTWeapon_Default::GetProjectile()
+{
+	return WeaponSetting.ProjectileSetting;
+}
+
 void ASTWeapon_Default::SetWeaponStateFire(const bool bIsFiring)
 {
 	if (CheckWeaponCanFire())
@@ -173,7 +179,7 @@ void ASTWeapon_Default::SetWeaponStateFire(const bool bIsFiring)
 	else
 	{
 		bIsWeaponFiring = false;
-		FireTimer = 0.01f;
+		FireTimer = -0.01f;
 	}
 }
 
@@ -260,7 +266,6 @@ void ASTWeapon_Default::ReloadTick(float DeltaTime)
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 0.001f, FColor::Yellow, FString::Printf(TEXT("ReloadTimer: %f"), ReloadTimer));
 			ReloadTimer -= DeltaTime;
 		}
 	}
@@ -279,7 +284,6 @@ bool ASTWeapon_Default::CanWeaponReload()
 			{
 				bResult = false;
 			}
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("WeaponCanReload")));
 		}
 	}
 	else
@@ -314,7 +318,6 @@ int8 ASTWeapon_Default::GetAvailableAmmoForReload()
 			int8 AvailableAmmo = 0;
 			if (MyInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmo))
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, FString::Printf(TEXT("AvailableAmmo: %i"), AvailableAmmo));
 				ResultAmmo = AvailableAmmo;
 			}
 		}

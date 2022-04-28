@@ -75,13 +75,16 @@ public:
 	void FireTick(float DeltaTime);
 	bool CheckWeaponCanFire() const;
 	void Fire();
+	FProjectileInfo GetProjectile();
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponStateFire(bool bIsFiring);
 	
 	bool bIsFireBlocked = false;
-	float FireTimer = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
+	float FireTimer = -0.1f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
 	bool bIsWeaponFiring = false;
+	bool bIsPistolShoot = false;
 	
 	void DispersionTick(float DeltaTime);
 	void ChangeDispersionByShot();

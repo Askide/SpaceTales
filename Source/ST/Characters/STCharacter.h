@@ -80,6 +80,7 @@ public:
 	
 	void AttackPressed();
 	void AttackReleased();
+	void PistolRateOfFireTimer();
 	void AttackCharEvent(bool bIsFiring);
 	UFUNCTION()
 	void CharAttack();
@@ -94,6 +95,9 @@ public:
 	                 AActor* DamageCauser);
 	UFUNCTION()
 	void CharDead();
+
+	FTimerHandle PistolFireRate;
+	bool bIsSingleShootEnable = false;
 
 	UFUNCTION(BlueprintNativeEvent)
 	void WeaponReloadStart_BP(UAnimMontage* CharAnim);

@@ -190,19 +190,38 @@ void ASTCharacter::EquipNewWeapon(ASTWeapon_Default* NewWeapon)
 void ASTCharacter::AttackPressed()
 {
 	AttackCharEvent(true);
+	if (!CurrentWeapon->WeaponSetting.bIsReloadable && !bIsSingleShootEnable)
+	{
+		bIsSingleShootEnable = true;
+		GetWorld()->GetTimerManager().SetTimer(PistolFireRate, this, &ASTCharacter::PistolRateOfFireTimer, GetWorld()->GetDeltaSeconds(), true);
+	}
 }
 
 void ASTCharacter::AttackReleased()
 {
 	AttackCharEvent(false);
+	if (!CurrentWeapon->WeaponSetting.bIsReloadable && bIsSingleShootEnable)
+	{
+		bIsSingleShootEnable = false;
+		GetWorld()->GetTimerManager().SetTimer(PistolFireRate, this, &ASTCharacter::PistolRateOfFireTimer, GetWorld()->GetDeltaSeconds(), true);
+	}
+}
+
+void ASTCharacter::PistolRateOfFireTimer()
+{
+	CurrentWeapon->FireTimer -= GetWorld()->GetDeltaSeconds();
+	if (CurrentWeapon->FireTimer < 0.f)
+	{
+		bIsSingleShootEnable = true;
+		GetWorld()->GetTimerManager().ClearTimer(PistolFireRate);
+	}
 }
 
 void ASTCharacter::AttackCharEvent(bool bIsFiring)
 {
-	ASTWeapon_Default* MyWeapon = CurrentWeapon;
-	if (MyWeapon)
+	if (CurrentWeapon)
 	{
-		MyWeapon->SetWeaponStateFire(bIsFiring);
+		CurrentWeapon->SetWeaponStateFire(bIsFiring);
 	}
 	else
 	{
