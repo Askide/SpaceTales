@@ -33,7 +33,6 @@ public:
 	void InputAxisX(float Value);
 	
 	void MovementStateSpeedUpdate(EMovementStates MovementState, float &ResultSpeed);
-	
 	float AxisY;
 	float AxisX;
 };

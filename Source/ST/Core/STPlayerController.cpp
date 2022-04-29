@@ -88,3 +88,4 @@ void ASTPlayerController::MovementStateSpeedUpdate(EMovementStates MovementState
 		break;
 	}
 }
+

@@ -30,7 +30,7 @@ ASTProjectile_Default::ASTProjectile_Default()
 	BulletMesh->SetCanEverAffectNavigation(false);
 
 	BulletFX = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Bullet FX"));
-	BulletFX->SetupAttachment(RootComponent);
+	BulletFX->SetupAttachment(BulletMesh);
 
 	BulletProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Bullet ProjectileMovement"));
 	BulletProjectileMovement->UpdatedComponent = RootComponent;
@@ -89,24 +89,8 @@ void ASTProjectile_Default::InitProjectile(FProjectileInfo InitParam)
 
 void ASTProjectile_Default::BulletCollisionSphereHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (OtherActor && Hit.PhysMaterial.IsValid())
-	{
-		if (ProjectileSetting.HitSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ProjectileSetting.HitSound, Hit.ImpactPoint);
-		}
-	}
-	
 	UGameplayStatics::ApplyPointDamage(OtherActor, ProjectileSetting.ProjectileDamage, Hit.TraceStart, Hit, GetInstigatorController(), this, NULL);
 	ImpactProjectile();
-}
-
-void ASTProjectile_Default::BulletCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-}
-
-void ASTProjectile_Default::BulletCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
 }
 
 void ASTProjectile_Default::ImpactProjectile()

@@ -91,11 +91,16 @@ void ASTCharacter::Tick(float DeltaSeconds)
 		{
 			FHitResult TraceHitResult;
 			MyPC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
+			
 			const FVector CursorLocation = TraceHitResult.ImpactNormal;
 			const FRotator CursorRotation = CursorLocation.Rotation();
 
 			CurrentCursor->SetWorldLocation(TraceHitResult.Location);
 			CurrentCursor->SetWorldRotation(CursorRotation);
+			if(CurrentWeapon)
+			{
+				CurrentWeapon->ShootEndLocation = TraceHitResult.Location;
+			}
 		}
 	}
 }
@@ -174,6 +179,7 @@ void ASTCharacter::EquipNewWeapon(ASTWeapon_Default* NewWeapon)
 	{
 		CurrentWeapon = NewWeapon;
 		CurrentWeapon->AttachToComponent(GetMesh(), Rule, CurrentWeapon->WeaponHandsSlot);
+		InventoryComponent->OnSwitchWeapon.Broadcast(NewWeapon->WeaponType);
 	}
 	else
 	{
@@ -182,6 +188,7 @@ void ASTCharacter::EquipNewWeapon(ASTWeapon_Default* NewWeapon)
 			CurrentWeapon->AttachToComponent(GetMesh(), Rule, CurrentWeapon->WeaponBackpackSlot);
 			NewWeapon->AttachToComponent(GetMesh(), Rule, CurrentWeapon->WeaponHandsSlot);
 			CurrentWeapon = NewWeapon;
+			InventoryComponent->OnSwitchWeapon.Broadcast(NewWeapon->WeaponType);
 		}
 	}
 	

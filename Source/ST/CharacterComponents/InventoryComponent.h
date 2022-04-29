@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "ST/Weapons/STWeapon_Default.h"
+#include "ST/FunctionLibrary/STBPFunctionLibrary.h"
 #include "InventoryComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNoAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSwitchWeapon, EWeaponType, NewWeaponType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChange, EWeaponType, WeaponType, int32, ChangeCount);
 
 USTRUCT(BlueprintType)
@@ -19,8 +21,6 @@ struct FWeaponSlot
 	TSubclassOf<ASTWeapon_Default> WeaponClass;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
 	FName WeaponName;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	UTexture2D* WeaponImage;
 };
 
 USTRUCT(BlueprintType)
@@ -48,6 +48,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintAssignable, BlueprintReadWrite, Category = "Weapon")
 	FNoAmmo NoAmmo;
+	UPROPERTY(EditAnywhere, BlueprintAssignable, BlueprintReadWrite, Category = "Weapon")
+	FOnSwitchWeapon OnSwitchWeapon;
 	UPROPERTY(EditAnywhere, BlueprintAssignable, BlueprintReadWrite, Category = "Weapon")
 	FOnAmmoChange OnAmmoChange;
 

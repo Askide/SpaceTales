@@ -47,6 +47,8 @@ void ASTWeapon_Default::Tick(float DeltaTime)
 	FireTick(DeltaTime);	
 	ReloadTick(DeltaTime);
 	DispersionTick(DeltaTime);
+
+	
 }
 
 void ASTWeapon_Default::WeaponInit() const
@@ -107,6 +109,7 @@ void ASTWeapon_Default::Fire()
 
 		FVector EndLocation = GetFireEndLocation();
 		FVector Dir = EndLocation - SpawnLocation;
+		Dir = FVector(Dir.X, Dir.Y, 0.0f);
 		Dir.Normalize();
 		
 		FMatrix MyMatrix(Dir, FVector(0, 1, 0), FVector(0, 0, 1), FVector::ZeroVector);
@@ -249,7 +252,7 @@ FVector ASTWeapon_Default::ApplyDispersionToShoot(FVector DirectionShoot) const
 
 FVector ASTWeapon_Default::GetFireEndLocation() const
 {
-	const FVector EndLocation = ShootLocation->GetComponentLocation() + ApplyDispersionToShoot(ShootLocation->GetForwardVector()) * 2000.0f;
+	FVector EndLocation = ShootLocation->GetComponentLocation() + ApplyDispersionToShoot(ShootLocation->GetComponentLocation() - ShootEndLocation) * -2000.0f;
 	return EndLocation;
 }
 
