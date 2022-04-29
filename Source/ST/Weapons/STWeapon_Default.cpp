@@ -83,7 +83,7 @@ void ASTWeapon_Default::FireTick(float DeltaTime)
 
 bool ASTWeapon_Default::CheckWeaponCanFire() const
 {
-	return GetWeaponRound() > 0;
+	return !bIsFireBlocked && GetWeaponRound() > 0;
 }
 
 void ASTWeapon_Default::Fire()
@@ -100,12 +100,12 @@ void ASTWeapon_Default::Fire()
 	
 	if (ShootLocation)
 	{
-		const FVector SpawnLocation = ShootLocation->GetComponentLocation();
+		FVector SpawnLocation = ShootLocation->GetComponentLocation();
 		FRotator SpawnRotation = ShootLocation->GetComponentRotation();
 		FProjectileInfo ProjectileInfo;
 		ProjectileInfo = GetProjectile();
 
-		const FVector EndLocation = GetFireEndLocation();
+		FVector EndLocation = GetFireEndLocation();
 		FVector Dir = EndLocation - SpawnLocation;
 		Dir.Normalize();
 		
@@ -126,22 +126,19 @@ void ASTWeapon_Default::Fire()
 			if (MyProjectile)
 			{
 				MyProjectile->ProjectileSetting = ProjectileInfo;
-				MyProjectile->InitProjectile(ProjectileInfo);
+				MyProjectile->InitProjectile(MyProjectile->ProjectileSetting);
 			}
 		}
 		else
 		{
 			FHitResult HitResult;
 
-			const FVector TraceStartPoint = SpawnLocation;
-			const FVector TraceEndPoint = EndLocation;
+			FVector TraceStartPoint = SpawnLocation;
+			FVector TraceEndPoint = EndLocation;
 		
 			if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStartPoint, TraceEndPoint, ECC_WorldStatic))
 			{
 				//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("TraceWork")));
-				DrawDebugLine(GetWorld(), ShootLocation->GetComponentLocation(), HitResult.Location, FColor::Yellow, false, 5.f, (uint8)'\000', 0.5f);
-				DrawDebugSphere(GetWorld(), HitResult.Location, 5.0f, 8, FColor::Green, false, 4.0f);
-			
 				if(HitResult.GetActor() && HitResult.PhysMaterial.IsValid())
 				{
 					if (ProjectileInfo.HitSound)
@@ -252,7 +249,7 @@ FVector ASTWeapon_Default::ApplyDispersionToShoot(FVector DirectionShoot) const
 
 FVector ASTWeapon_Default::GetFireEndLocation() const
 {
-	const FVector EndLocation = ShootLocation->GetComponentLocation() + ApplyDispersionToShoot(ShootLocation->GetForwardVector()) * WeaponSetting.DistanceTrace;
+	const FVector EndLocation = ShootLocation->GetComponentLocation() + ApplyDispersionToShoot(ShootLocation->GetForwardVector()) * 2000.0f;
 	return EndLocation;
 }
 
